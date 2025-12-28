@@ -1,0 +1,5 @@
+E:\毕业设计\quic_demo\QuicServer\QuicServer\obj\Debug\net9.0\QuicServer.csproj.AssemblyReference.cache
+E:\毕业设计\quic_demo\QuicServer\QuicServer\obj\Debug\net9.0\QuicServer.GeneratedMSBuildEditorConfig.editorconfig
+E:\毕业设计\quic_demo\QuicServer\QuicServer\obj\Debug\net9.0\QuicServer.AssemblyInfoInputs.cache
+E:\毕业设计\quic_demo\QuicServer\QuicServer\obj\Debug\net9.0\QuicServer.AssemblyInfo.cs
+E:\毕业设计\quic_demo\QuicServer\QuicServer\obj\Debug\net9.0\QuicServer.csproj.CoreCompileInputs.cache
