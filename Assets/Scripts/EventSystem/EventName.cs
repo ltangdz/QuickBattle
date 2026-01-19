@@ -17,4 +17,7 @@ public static class EventName
     public const string AttackCdStarted = "AttackCdStarted";
     public const string AccelerateCdStarted = "AccelerateCdStarted";
     public const string HealCdStarted = "HealCdStarted";
+    
+    // NetworkPoolManager.cs
+    public const string NetworkObjectPoolCreated = "NetworkObjectPoolCreated";
 }

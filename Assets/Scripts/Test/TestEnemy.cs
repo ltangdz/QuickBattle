@@ -39,7 +39,7 @@ public class TestEnemy : MonoBehaviour, IDamagable
         else
         {
             Bullet bullet = (Bullet)PoolManager.Instance.ReuseComponent(bulletPrefab, shootPos.position, Quaternion.identity);
-            bullet.Init(this, transform.forward);
+            bullet.InitBullet(this, transform.forward, shootPos.position);
             shootTimer = 0f;
         }
     }
@@ -52,7 +52,7 @@ public class TestEnemy : MonoBehaviour, IDamagable
             // Bullet bullet = Instantiate(bulletPrefab, shootPos.position, Quaternion.identity).GetComponent<Bullet>();
             Bullet bullet = (Bullet)PoolManager.Instance.ReuseComponent(bulletPrefab, shootPos.position, Quaternion.identity);
 
-            bullet.Init(this, transform.forward);
+            bullet.InitBullet(this, transform.forward, shootPos.position);
             
             yield return new WaitForSeconds(shootTimer);
         }

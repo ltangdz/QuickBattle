@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.Serialization;
 using Random = UnityEngine.Random;
@@ -8,11 +9,11 @@ using Random = UnityEngine.Random;
 /// <summary>
 /// 地图资源管理类 (控制资源生成算法)
 /// </summary>
-public class ResourceManager : Singleton<ResourceManager>
+public class ResourceManager : SingletonNetwork<ResourceManager>
 {
     [Header("核心配置")]
     [Tooltip("能量块预制体")]
-    [SerializeField] private GameObject energyBlockPrefab;
+    [SerializeField] private Transform energyBlockPrefab;
     [Tooltip("地图当前能量块总量")]
     [SerializeField] private int curEnergyBlockCount = 0;
     [Tooltip("地图初始能量块总量")]
@@ -41,6 +42,10 @@ public class ResourceManager : Singleton<ResourceManager>
     /// </summary>
     public void Init()
     {
+        if (!NetworkManager.Singleton.IsServer) return;
+
+        Debug.Log("ResourceManager 初始化");
+        
         for (int i = 0; i < initEnergyBlockCount; i++)
         {
             SpawnEnergyBlock();
@@ -53,6 +58,8 @@ public class ResourceManager : Singleton<ResourceManager>
 
     private void Update()
     {
+        if (!GameManager.Instance.IsStart || !NetworkManager.Singleton.IsServer) return;
+        
         // 随机时间间隔后 执行资源补刷
         if (curSpawnTimeStamp < Time.time)
         {
@@ -78,8 +85,15 @@ public class ResourceManager : Singleton<ResourceManager>
         Quaternion spawnRot = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
         
         // 执行生成逻辑
-        EnergyBlock energyBlock = (EnergyBlock)PoolManager.Instance.ReuseComponent(energyBlockPrefab, spawnPos, spawnRot);
-        energyBlock.gameObject.SetActive(true);
+        // EnergyBlock energyBlock = (EnergyBlock)PoolManager.Instance.ReuseComponent(energyBlockPrefab, spawnPos, spawnRot);
+        // var energyBlockNetworkObject = NetworkPoolManager.Instance.ReuseAndShowNetworkObject(energyBlockPrefab, spawnPos, spawnRot);
+
+        Transform energyBlockTransform = Instantiate(energyBlockPrefab);
+        energyBlockTransform.position = spawnPos;
+        energyBlockTransform.rotation = spawnRot;
+        NetworkObject energyBlockNetworkObject = energyBlockTransform.GetComponent<NetworkObject>();
+        energyBlockNetworkObject.Spawn();
+        
         curEnergyBlockCount++;
     }
 

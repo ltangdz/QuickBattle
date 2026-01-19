@@ -129,20 +129,4 @@ public class PoolManager : Singleton<PoolManager>
         componentToReuse.transform.rotation = rotation;
         componentToReuse.transform.localScale = prefab.transform.localScale;
     }
-    
-    
-    // /// <summary>
-    // /// 使用结束后 回收到对象池
-    // /// </summary>
-    // /// <param name="prefab"></param>
-    // /// <param name="component"></param>
-    // public void ReturnToPool(GameObject prefab, Component component)
-    // {
-    //     int poolKey = prefab.GetInstanceID();
-    //     if (poolDictionary.ContainsKey(poolKey))
-    //     {
-    //         component.gameObject.SetActive(false);
-    //         poolDictionary[poolKey].Enqueue(component);
-    //     }
-    // }
 }

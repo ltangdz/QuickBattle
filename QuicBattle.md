@@ -100,6 +100,7 @@
 | 游戏数据类型                       | Netcode 实现方式        | 优先级（越小越高） | 可靠性要求   | MSQUIC 传输方式         | 验证目标                     |
 | ---------------------------------- | ----------------------- | ------------------ | ------------ | ----------------------- | ---------------------------- |
 | 技能释放指令（攻击 / 加速 / 回血） | ServerRpc（服务器权威） | 0                  | 100% 送达    | 可靠双向流（0x1000 起） | 多路复用中高优先级流无阻塞   |
+| 玩家Transform                      | NetworkTransform        |                    |              |                         |                              |
 | 玩家位置 / 血量 / 能量值同步       | NetworkVariable         | 10                 | 允许少量丢失 | 不可靠数据报（0x0001）  | 低延迟状态同步（≤50ms）      |
 | 排行榜                             | ClientRpc（广播）       | 20                 | 基本可靠     |                         |                              |
 | 聊天信息（玩家文字交流）           | ClientRpc（广播）       | 30                 | 基本可靠     | 可靠单向流（0x2000 起） | 低优先级流不挤占核心数据带宽 |
@@ -292,11 +293,95 @@ GameManager.cs 和 QuickNetworkManager.cs区别
 
 12.26 拼UI
 
-12.27
+12.27 接着拼UI 技能UI
 
-接着拼UI 技能UI
+
+
+
+
+12.29 开始联机部分开发
 
 netcode开始集成
+
+1. 添加NetworkManager，在Player.cs中继承NetworkBehaviour
+2. 玩家移动 / 跳跃逻辑：Rigidbody刚体，在服务器上isKinematic = false（非运动学），在客户端上isKinematic = true，是因为对物体的移动逻辑是服务器权威的，客户端无权修改，因此客户端上进行输入操作控制物体移动，实际上是发送给服务器一系列指令：HandlePlayerInputServerAuth()，接着服务器根据玩家的输入处理移动逻辑HandlePlayerMovementServerRpc()，然后通过HandlePlayerMovementClientRpc() 向所有客户端广播新的位置信息，或者使用NetworkTransform简化逻辑（本项目使用）
+
+
+
+12.30 出bug了 资源打包问题
+
+问题：Player中有ScriptableObject的引用，编辑器中没有问题，但是打包后的游戏日志显示对ScriptableObject的空引用，现在要解决ScriptableObject的打包问题
+
+解决方案：GameResources类进行资源管理，在Asset下创建子文件夹Resources，再在里面创建GameResources预制体，存放所有ScriptableObject的引用，对游戏资源进行集中管理
+
+
+
+同步玩家跳跃逻辑
+
+修复bug：玩家落地检测 GroundDetectPoint.cs
+
+同步子弹生成逻辑（使用网络对象池 **不能在初始化对象池时，调用NetworkObject.Spawn()，因为Spawn只能在服务器发起**）
+
+子弹逻辑：
+
+1. Player监听GameInput的攻击事件
+
+网络对象池：必须继承NetworkBehavior，因为只有NetworkObject才能成为NetworkObject的父类
+
+同步子弹位置：NetworkTransform
+
+同步技能释放逻辑
+
+同步游戏计时器逻辑
+
+
+
+
+
+子弹bug：
+
+1. 服务器对象池初始化生成子弹之后，在客户端未隐藏
+2. 子弹在飞行时间结束之后，在客户端未隐藏
+
+
+
+
+
+
+
+
+
+1.1 新年快乐！
+
+1.2 开始复习期末，预计大学物理5天，离散数学5天，共计10天，先消失一段时间啦~
+
+
+
+
+
+
+
+1.19 满血复活
+
+第一件事，重构代码，取消使用网络对象池，改为传统的网络对象创建/销毁，先让项目不出bug，因为我写的网络对象池跑不通
+
+
+
+
+
+1.20
+
+重构代码，使用NetworkVariable进行网络同步
+
+解决bug：所有玩家共用等级
+
+完善玩家复活逻辑
+
+增加游戏音效
+
+
+
+
 
 
 

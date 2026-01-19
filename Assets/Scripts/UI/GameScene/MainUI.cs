@@ -49,8 +49,16 @@ public class MainUI : BaseUI
         // gameOverUI.Hide();
 
         // settingButton.onClick.AddListener();
-        
-        if (!Application.isMobilePlatform) isShowCursor = true;
+
+        if (!Application.isMobilePlatform)
+        {
+            isShowCursor = true;
+            GameInput.Instance.OnShowCursorEvent += (sender, args) =>
+            {
+                isShowCursor = !isShowCursor;
+                screenCursor.gameObject.SetActive(isShowCursor);
+            };
+        }
     }
     
     private void OnDestroy()
@@ -63,12 +71,6 @@ public class MainUI : BaseUI
     {
         // 更新计时器
         UpdateCountDownTimerText();
-
-        if (!Application.isMobilePlatform && Input.GetKeyDown(KeyCode.CapsLock))
-        {
-            isShowCursor = !isShowCursor;
-            screenCursor.gameObject.SetActive(isShowCursor);
-        }
     }
 
     private void UpdateCountDownTimerText()

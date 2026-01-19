@@ -1,4 +1,6 @@
+using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 // 挂载在 MainCamera 上
@@ -50,7 +52,6 @@ public class CameraFollow : MonoBehaviour
     private void Start()
     {
         followCamera = GetComponent<Camera>();
-        followTarget = Player.LocalInstance.transform;
 
         // 初始化垂直角度（基于初始偏移）
         // curRotX = transform.eulerAngles.x;
@@ -60,11 +61,26 @@ public class CameraFollow : MonoBehaviour
         // 锁定鼠标到屏幕中心（可选，第五人格风格可开启）
         // Cursor.lockState = CursorLockMode.Locked;
         // Cursor.visible = false;
+        
+        NetworkManager.Singleton.OnClientConnectedCallback += NetworkManager_OnClientConnectedCallback;
+    }
+
+    private void NetworkManager_OnClientConnectedCallback(ulong clientId)
+    {
+        // 本地玩家连接
+        if (clientId == NetworkManager.Singleton.LocalClientId)
+        {
+            Debug.Log("本地玩家已连接！");
+            followTarget = Player.LocalInstance.transform;
+        }
     }
 
     private void LateUpdate()
     {
-        UpdateCameraTrans();
+        if (followTarget != null)
+        {
+            UpdateCameraTrans();
+        }
     }
 
     /// <summary>
@@ -73,24 +89,32 @@ public class CameraFollow : MonoBehaviour
     private void UpdateCameraTrans()
     {
         // 1. 获取鼠标输入
-        float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity; // 水平旋转 (左右)
-        float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity; // 垂直旋转 (上下)
-        float scroll = Input.GetAxis("Mouse ScrollWheel");          // 滚轮输入 [-1, 1]
+        // Pointer pointer = Pointer.current;
+        // float mouseX = pointer.delta.ReadValue().x * mouseSensitivity;
+        // float mouseY = pointer.delta.ReadValue().y * mouseSensitivity;
 
-        if (screenCursor.gameObject.activeSelf)
-        {
-            mouseX = 0f;
-            mouseY = 0f;
-            scroll = 0f;
-        }
+        float mouseX = GameInput.Instance.GetMousePosition().x * mouseSensitivity;
+        float mouseY = GameInput.Instance.GetMousePosition().y * mouseSensitivity;
+        float scroll = GameInput.Instance.GetScrollWheelValue();
+        
+        // float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity; // 水平旋转 (左右)
+        // float mouseY = Input.GetAxis("Mouse Y") * mouseSensitivity; // 垂直旋转 (上下)
+        // float scroll = Input.GetAxis("Mouse ScrollWheel");          // 滚轮输入 [-1, 1]
+
+        // if (screenCursor.gameObject.activeSelf)
+        // {
+        //     mouseX = 0f;
+        //     mouseY = 0f;
+        //     scroll = 0f;
+        // }
 
 
         // 2. 计算并限制垂直旋转角度（避免过度抬头/低头）
         // curPosOffsetY += mouseY;
         // curRotX += mouseY * 2;
         
-        curPosOffsetY = Mathf.Clamp(curPosOffsetY + mouseY, minPosOffsetY, maxPosOffsetY);
-        curRotX = Mathf.Clamp(curRotX + mouseY * 2, minRotX, maxRotX);
+        curPosOffsetY = Mathf.Clamp(curPosOffsetY - mouseY, minPosOffsetY, maxPosOffsetY);
+        curRotX = Mathf.Clamp(curRotX - mouseY * 2, minRotX, maxRotX);
 
         // 3. 相机绕玩家旋转（核心逻辑）
         // 水平旋转：相机绕玩家Y轴旋转（左右转向）
@@ -113,7 +137,7 @@ public class CameraFollow : MonoBehaviour
             transform.position = targetPos;
         }
 
-        float targetFOV = Mathf.Clamp(followCamera.fieldOfView + scroll * scrollSensitivity, minFOV, maxFOV);
+        float targetFOV = Mathf.Clamp(followCamera.fieldOfView - scroll * scrollSensitivity, minFOV, maxFOV);
         followCamera.fieldOfView = targetFOV;
     }
 }

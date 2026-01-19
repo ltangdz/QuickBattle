@@ -23,6 +23,7 @@ public class GameInput : Singleton<GameInput>
 
     public EventHandler OnJumpEvent;
     public EventHandler<SkillType> OnUseSkillEvent;
+    public EventHandler OnShowCursorEvent;
     
     
     private PlayerInputActions playerInputActions;
@@ -38,15 +39,18 @@ public class GameInput : Singleton<GameInput>
         playerInputActions.Player.Attack.performed += Attack_Performed;
         playerInputActions.Player.Accelerate.performed += Accelerate_Performed;
         playerInputActions.Player.Heal.performed += Heal_Performed;
+        playerInputActions.Player.ShowCursor.performed += ShowCursor_Performed;
     }
+
 
     private void OnDestroy()
     {
         playerInputActions.Player.Jump.performed -= Jump_Performed;
         playerInputActions.Player.Attack.performed -= Attack_Performed;
-        playerInputActions.Player.Accelerate.performed += Accelerate_Performed;
-        playerInputActions.Player.Heal.performed += Heal_Performed;
-        
+        playerInputActions.Player.Accelerate.performed -= Accelerate_Performed;
+        playerInputActions.Player.Heal.performed -= Heal_Performed;
+        playerInputActions.Player.ShowCursor.performed -= ShowCursor_Performed;
+
         playerInputActions.Dispose();
     }
     
@@ -77,6 +81,11 @@ public class GameInput : Singleton<GameInput>
         Debug.Log("回血");
     }
     
+    private void ShowCursor_Performed(InputAction.CallbackContext obj)
+    {
+        OnShowCursorEvent?.Invoke(this, EventArgs.Empty);
+    }
+    
     /// <summary>
     /// 获取玩家移动方向向量 (归一化后)
     /// </summary>
@@ -103,5 +112,15 @@ public class GameInput : Singleton<GameInput>
     public void EnablePlayerInput()
     {
         playerInputActions.Player.Enable();
+    }
+
+    public Vector2 GetMousePosition()
+    {
+        return playerInputActions.Player.MouseDelta.ReadValue<Vector2>();
+    }
+
+    public float GetScrollWheelValue()
+    {
+        return playerInputActions.Player.ScrollWheel.ReadValue<Vector2>().y;
     }
 }

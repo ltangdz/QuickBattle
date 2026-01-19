@@ -14,24 +14,33 @@ public enum GameState
     PlayingState,
     GameOverState,
 }
-public class GameManager : Singleton<GameManager>
+public class GameManager : SingletonNetwork<GameManager>
 {
+    // private NetworkList<PlayerData> playerDataNetworkList;
     private GameState currentState;
 
     [Space(10)]
     [Header("游戏流程相关")]
-    [Tooltip("剩余游戏时间")]
-    [SerializeField] private float playingTimer = 0f;
+    // [Tooltip("剩余游戏时间")]
+    // [SerializeField] private float playingTimer = 0f;
     [Tooltip("最大游戏时间")]
     [SerializeField] private float playingTimerMax = 300f;
+    
+    private NetworkVariable<float> playingTimer = new NetworkVariable<float>(0f);
 
     // 游戏结束事件 (计时器结束触发 UI监听)
     public EventHandler OnGameOverEvent;
 
-    private void Start()
+    public override void OnNetworkSpawn()
     {
+        if (!IsServer) return;
+        
+        Debug.Log("初始化游戏状态");
         InitPlayingGameState();
     }
+
+    private bool isStart = false;
+    public bool IsStart => isStart;
 
     private void InitPlayingGameState()
     {
@@ -39,30 +48,36 @@ public class GameManager : Singleton<GameManager>
         ChangeGameState(GameState.PlayingState);
         
         // 初始化计时器
-        playingTimer = playingTimerMax;
+        playingTimer.Value = playingTimerMax;
         
         // 初始化游戏资源
         ResourceManager.Instance.Init();
+        
+        isStart = true;
     }
 
     private void Update()
     {
+        if (!NetworkManager.Singleton.IsServer) return;
+        
         UpdateGameState();
     }
 
     private void UpdateGameState()
     {
+        if (!isStart) return;
+        
         switch (currentState)
         {
             case GameState.PlayingState:
-                if (playingTimer >= 0f)
+                if (playingTimer.Value >= 0f)
                 {
-                    playingTimer -= Time.deltaTime;
+                    playingTimer.Value -= Time.deltaTime;
                 }
                 else
                 {
                     // 处理游戏结束逻辑
-                    playingTimer = 0f;
+                    playingTimer.Value = 0f;
                     ChangeGameState(GameState.GameOverState);
                     GameInput.Instance.DisablePlayerInput();
                     OnGameOverEvent?.Invoke(this, EventArgs.Empty);
@@ -91,6 +106,6 @@ public class GameManager : Singleton<GameManager>
 
     public float GetPlayingTimeLeft()
     {
-        return playingTimer;
+        return playingTimer.Value;
     }
 }

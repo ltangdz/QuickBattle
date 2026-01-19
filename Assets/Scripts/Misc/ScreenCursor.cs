@@ -1,10 +1,15 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class ScreenCursor : MonoBehaviour
 {
+    public RectTransform rectTransform;
+    
     private void Awake()
     {
-        Cursor.lockState = CursorLockMode.Confined;
+        rectTransform = GetComponent<RectTransform>();
+        
+        // Cursor.lockState = CursorLockMode.Confined;
         Cursor.visible = false;
     }
 
@@ -15,7 +20,10 @@ public class ScreenCursor : MonoBehaviour
         // Todo: 新输入系统
         if (Application.isMobilePlatform || !gameObject.activeSelf) return;
 
-        transform.position = Input.mousePosition;
+        Pointer pointer = Pointer.current;
+        rectTransform.position = pointer.position.ReadValue();
+
+        // transform.position = Input.mousePosition;
     }
 
 }

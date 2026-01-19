@@ -42,7 +42,7 @@ public class EventManager : Singleton<EventManager>
     /// <param name="handler">事件处理函数</param>
     public void AddListener(string eventName, EventHandler handler)
     {
-        Debug.Log($"[EventManager] 注册事件 {eventName} 成功");
+        // Debug.Log($"[EventManager] 注册事件 {eventName} 成功");
         if (handlerDic.ContainsKey(eventName))
             handlerDic[eventName] += handler;
         else

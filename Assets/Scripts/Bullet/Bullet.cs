@@ -1,10 +1,12 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
+using Unity.Netcode.Components;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
-public class Bullet : MonoBehaviour
+public class Bullet : NetworkBehaviour
 {
     [Space(10)]
     [Header("子弹属性")]
@@ -21,7 +23,22 @@ public class Bullet : MonoBehaviour
     
     private MeshRenderer meshRenderer;
 
+    private NetworkVariable<bool> isFiring = new NetworkVariable<bool>(false);
+
+    private void Awake()
+    {
+        rb = GetComponent<Rigidbody>();
+        meshRenderer = GetComponentInChildren<MeshRenderer>();
+    }
+
     private void Update()
+    {
+        if (!NetworkManager.Singleton.IsServer) return;
+
+        UpdateFlyingTimer();
+    }
+
+    private void UpdateFlyingTimer()
     {
         flyingTimer += Time.deltaTime;
         if (flyingTimer >= flyingTimerMax)
@@ -30,32 +47,62 @@ public class Bullet : MonoBehaviour
         }
     }
 
+    [ServerRpc(RequireOwnership = false)]
+    private void UpdateFlyingTimerServerRpc()
+    {
+
+    }
+    
     /// <summary>
-    /// 初始化弹药
+    /// 在服务器销毁自身
+    /// </summary>
+    private void DestroySelf()
+    {
+        flyingTimer = 0f;
+        rb.velocity = Vector3.zero;
+        isFiring.Value = false;
+        
+        Debug.Log("子弹自动回收");
+        Destroy(gameObject);
+    }
+
+    /// <summary>
+    /// 初始化弹药 只能在服务器调用
     /// </summary>
     /// <param name="source">弹药来源</param>
     /// <param name="shootDir">射击方向</param>
-    public void Init(IDamagable source, Vector3 shootDir)
+    public void InitBullet(IDamagable source, Vector3 shootDir, Vector3 shootPos)
     {
-        gameObject.SetActive(true);
+        Debug.Log("InitBullet");
         
+        rb.isKinematic = false;
         bulletOwner = source;
         damage = source.CalculateDamage();
-        rb = GetComponent<Rigidbody>();
         
-        meshRenderer = GetComponentInChildren<MeshRenderer>();
+        Vector3 rgb = new Vector3(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f));
+        meshRenderer.material.color = new Color(rgb.x, rgb.y, rgb.z);
+        
+        isFiring.Value = true;
 
-        // 设置子弹初速度
+        transform.position = shootPos;
+        
         rb.AddForce(shootDir * flyingSpeed, ForceMode.VelocityChange);
 
-        // 设置子弹颜色
+        InitBulletClientRpc(rgb);
+    }
+
+    [ClientRpc]
+    private void InitBulletClientRpc(Vector3 rgb)
+    {
+        // 设置子弹颜色 (服务器广播)
         // Todo: 目前随机颜色 后面改成和玩家一样的颜色
-        meshRenderer.material.color = new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f));
-        // StartCoroutine(DestroyCoroutine());
+        meshRenderer.material.color = new Color(rgb.x, rgb.y, rgb.z);
     }
 
     private void OnTriggerEnter(Collider other)
     {
+        if (!isFiring.Value || !NetworkManager.Singleton.IsServer) return;
+
         if (other.CompareTag(Settings.TAG_PLAYER))
         {
             IDamagable player = other.GetComponent<IDamagable>();
@@ -72,27 +119,5 @@ public class Bullet : MonoBehaviour
             // 碰到其他障碍物
             DestroySelf();
         }
-    }
-
-    private IEnumerator DestroyCoroutine()
-    {
-        while (flyingTimer < flyingTimerMax)
-        {
-            flyingTimer += Time.deltaTime;
-            yield return null;
-        }
-        
-        DestroySelf();
-    }
-
-    /// <summary>
-    /// 由于使用了对象池优化技术 所以只是隐藏自己 并非真的销毁
-    /// </summary>
-    private void DestroySelf()
-    {
-        flyingTimer = 0f;
-        rb.velocity = Vector3.zero;
-        
-        gameObject.SetActive(false);
     }
 }

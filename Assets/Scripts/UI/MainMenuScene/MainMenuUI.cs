@@ -14,7 +14,9 @@ public class MainMenuUI : BaseUI
 
     private void Start()
     {
-        startButton.onClick.AddListener(() => Loader.LoadScene(Settings.LOBBY_SCENE));
+        // startButton.onClick.AddListener(() => Loader.LoadScene(Settings.LOBBY_SCENE));
+        // 测试用
+        startButton.onClick.AddListener(() => Loader.LoadScene(Settings.GAME_SCENE));
 
         exitButton.onClick.AddListener(Application.Quit);
 
